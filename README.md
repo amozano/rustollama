@@ -67,3 +67,41 @@ The plan is to create a separate, specialized environment for each of our GPU ty
 * Assign Specific Drivers: Use Kubernetes DaemonSets to automatically install the correct NVIDIA driver and CUDA libraries onto each node in a specific pool.
 * Deploy Specialized Ollama Instances: Run separate Ollama deployments, each configured to run on a specific node pool and serve a specific set of models compatible with that hardware.
 * Implement Smart Routing: Deploy a lightweight proxy service that acts as the single entry point. This service will read the model name from the incoming API request and route it to the correct backing Ollama service.
+
+## Kubeflow v. RustOllama
+
+Both the RustOllama custom GKE auto-orchestration architecture and a Kubeflow-based setup aim to solve the same core problem: Serving diverse ML models on heterogeneous hardware. 
+However, they approach it with different levels of abstraction and complexity.
+
+The key difference is that RustOllama solution is intended to be a lightweight, bespoke implementation using fundamental Kubernetes objects, while Kubeflow is a comprehensive, opinionated MLOps platform.
+
+### Which One to Choose?
+
+**Choose RustOllama with custom GKE Auto-Orchestration approach if:**
+* Your primary need is to solve the immediate problem of routing models to specific hardware.
+* You value simplicity, transparency, and direct control over the infrastructure.
+* You don't need the overhead of a full MLOps platform.
+* You have a small team or limited Kubernetes expertise and want a solution that is easy to understand and manage.
+
+**Choose a Kubeflow/KServe implementation if:**
+* You are building a long-term, scalable MLOps platform for a data science team.
+* You need advanced features like automated pipelines, experiment tracking, and serverless, scale-to-zero model serving.
+* Your team is comfortable with the operational overhead of managing a more complex, feature-rich platform.
+* You want to standardize your entire ML lifecycle, from development in notebooks to production deployment.
+
+In essence, RustOllama is a pragmatic, focused solution for hobbyists, whereas Kubeflow offers a powerful, all-encompassing, enterprise-grade platform at the cost of increased complexity.
+
+**And last but not least, RustOllama is written in Rust!**
+
+Here’s a detailed comparison based on the architecture described:
+
+| Feature | Rustollama | Kubeflow with KServe |
+| :--- | :--- | :--- |
+| **Core Idea** | Use a simple, stateless proxy to route requests to specialized, isolated Ollama deployments. | Use a dedicated model-serving component (KServe) that manages the entire lifecycle of model deployment. |
+| **Complexity** | Lower. The architecture is built from standard, well-understood Kubernetes components (Deployments, Services, ConfigMaps, DaemonSets). The logic is transparent and easy to trace. | Higher. Kubeflow is a full-featured platform with many components (Pipelines, Katib, Notebooks, KServe). It requires a more significant initial investment in setup, configuration, and learning. |
+| **Flexibility** | Very High. You have complete control over every aspect of the deployment—the routing logic, the container images, the driver installation, and the specific Ollama configurations. | Moderate. Kubeflow provides a structured, standardized way to do MLOps. While powerful, it imposes its own conventions and abstractions. Customizations may require a deeper understanding of Kubeflow's internal workings. |
+| **Model Routing** | Explicit & Manual. You manually define the routing logic in a ConfigMap and implement the proxy yourself. This is simple but requires direct intervention to update. | Automated & Integrated. KServe (formerly KFServing), Kubeflow's model serving component, handles routing internally. It introduces its own Custom Resource Definition (InferenceService) that manages traffic splitting, canary rollouts, and routing to different model versions automatically. |
+| **GPU & Driver Management** | Explicit. You manually create tainted node pools and deploy DaemonSets for specific drivers. This gives you precise control, which is ideal for legacy or conflicting driver requirements. | Integrated. Kubeflow leverages the underlying Kubernetes cluster's GPU support. While it works seamlessly with GKE's automatic driver installation, managing highly specific or conflicting driver versions might require similar manual DaemonSet configurations. |
+| **Scalability** | Good. It scales well using standard Kubernetes Horizontal Pod Autoscalers (HPAs) on each Ollama deployment. You can autoscale node pools as well. | Excellent. KServe is built on top of Knative, which provides powerful event-driven, request-based autoscaling, including scale-to-zero. This is more resource-efficient, as models that are not in use will not consume any resources. |
+| **Feature Set** | Lean & Focused. The solution does one thing: route requests. It does not include features for experiment tracking, pipelining, or hyperparameter tuning. | Rich & Comprehensive. Kubeflow is a complete MLOps toolkit. It includes: <br>- Kubeflow Pipelines: For orchestrating complex ML workflows. <br>- Katib: For hyperparameter tuning. <br>- Notebook Servers: For interactive development. <br>- KServe: For advanced model serving with features like A/B testing, explainability, and payload logging. |
+| **Maintainability** | Simple. The small number of moving parts makes it easy to debug and maintain for a small team or a specific use case. | Complex. Maintaining a full Kubeflow installation is a significant operational task. It involves managing multiple controllers, CRDs, and a more complex dependency chain. |
