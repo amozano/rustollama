@@ -3,13 +3,17 @@
 * Ver: 0.1 (early PoC)
 * Author: Ash Mozano
   
-## TL;DR
+## Background
 
 I started “rustollama” (not to be confused with ollama-rs, a Rust library for interacting with the Ollama API) as a private hobby project a while back for porting ollama from Go to Rust (ollama-rs APIs + some of the pieces I'd refactored already show compelling performance and overhead deltas on my distributed hybrid hyperscaler + home GPU rigs).
 
-I'm exploring options for container auto-orcehstrations through ollama, so that it can efficiently host specific models on specialized containers created for various discovered devices (e.g., GPU, TPU, APU, CPU, etc.).  The original reason was that some NVIDIA GPU drivers and CUDA libraries do not support all the NVIDIA Tesla GPUs on the same OS, and some were also not supported by the latest NGC containers.  Adding non-NVIDIA devices to the mix adds a whole different level of challenge of setting up distributed rigs with lower-cost, legacy hardware.
+I'm exploring options for auto-orchestration of Ollama nodes, each catering to a specific category of discovered devices (e.g., GPU, TPU, APU, CPU, etc.) to efficiently host specific models.  
 
-**To be clear, the goal is not to compete with DGX (and NVLink, etc.), but to efficiently automate the orchestration of all discoverable, ML-capable devices in a given networked environment.**
+The original reason for the project was to workaround the fact that some NVIDIA GPU drivers and CUDA libraries do not support all the families of NVIDIA Tesla GPUs on the same OS, including on the latest NGC containers.  Adding non-NVIDIA devices to the mix adds an even bigger challenge in setting up distributed MLOps rigs with lower-cost, legacy hardware.
+
+Finally, Rust excels at creating fast, resilient, distributed systems with very little overhead.  Hence, RustOllama is born.
+
+To be clear, the goal is not to compete with DGX (and NVLink, etc.), as those tightly-integrated systems will always be orders of magnitude more performant for enterprise use cases.  Rather, the goal is to enable the hobbyist community with older and less expensive hardware to efficiently automate the orchestration of all discoverable, ML-capable devices in a given networked environment, equip them with the right open source LLMs, and dynamically route the workload (training, inference, etc.) appropriately, somewhat akin to a dynamic weighted ensemble. 
 
 ## Project Purpose
 
